@@ -1,0 +1,3 @@
+fonts-noto-core
+fonts-noto-ui-core
+fonts-hosny-amiri
