@@ -1,5 +1,3 @@
 weasyprint
-fonts-noto-core
-fonts-hosny-amiri
 qrcode
 Pillow
