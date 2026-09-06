@@ -1,3 +1,5 @@
+streamlit
 weasyprint
 qrcode
-Pillow
+pillow
+google-generativeai
