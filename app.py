@@ -2,216 +2,340 @@ import streamlit as st
 import re
 import datetime
 import io
-import base64
-from weasyprint import HTML
-from pptx import Presentation
+from weasyprint import HTML, CSS
 import google.generativeai as genai
-from PIL import Image
 
-# ڕێکخستنی سەرەکی
-st.set_page_config(page_title="داڕێژەری زیرەک", page_icon="✨", layout="wide")
+# ڕێکخستنی سەرەکی وێبسایت
+st.set_page_config(page_title="PDF Pro Engine", page_icon="👑", layout="wide")
 
 if 'doc_content' not in st.session_state:
     st.session_state.doc_content = ""
 
+# دانانی ئاڵای کوردستان و ناونیشان لەسەر وێبسایتەکە بە دیزاینی شاهانە
 st.markdown("""
-<h1 style='text-align: center; color: #1e3a8a; font-weight: 900;'>داڕێژەری زیرەک</h1>
-<p style='text-align: center; color: #64748b; font-size: 18px;'>پلاتفۆرمی بەرهەمهێنانی ناوەڕۆک (دەق و وێنە بۆ PDF و PowerPoint)</p>
-<hr>
+<div style="text-align: center; padding: 20px;">
+    <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="width: 120px; height: auto; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 2px solid #e2e8f0;">
+        <rect width="300" height="66.6" fill="#ED2024"/>
+        <rect y="66.6" width="300" height="66.6" fill="#FFFFFF"/>
+        <rect y="133.2" width="300" height="66.8" fill="#278E43"/>
+        <g transform="translate(150, 100)">
+            <circle r="22" fill="#FEBD11"/>
+            <path d="M 0 -35 L 4 -22 L 15 -32 L 9 -19 L 26 -20 L 15 -11 L 33 -5 L 20 0 L 33 5 L 15 11 L 26 20 L 9 19 L 15 32 L 4 22 L 0 35 L -4 22 L -15 32 L -9 19 L -26 20 L -15 11 L -33 5 L -20 0 L -33 -5 L -15 -11 L -26 -20 L -9 -19 L -15 -32 L -4 -22 Z" fill="#FEBD11"/>
+        </g>
+    </svg>
+    <h1 style='color: #1e3a8a; font-weight: 900; margin-top: 15px; font-size: 3rem;'>PDF Pro Engine</h1>
+    <p style='color: #64748b; font-size: 1.2rem; font-weight: bold;'>مۆتۆڕی دروستکردنی کەرەستەی فێرکاری ئاست بەرز</p>
+</div>
+<hr style="border: 2px solid #e2e8f0; border-radius: 5px;">
 """, unsafe_allow_html=True)
 
-tab_create, tab_image, tab_ai = st.tabs(["📝 داڕشتنی دەق (PDF / PPTX)", "🖼️ وێنە بۆ PDF", "🤖 مۆدی زیرەکی دەستکرد"])
+tab_pdf, tab_ai = st.tabs(["📄 دروستکردنی PDF (پڕۆفیشناڵ)", "🤖 مۆدی زیرەکی دەستکرد (AI)"])
 
-with tab_create:
-    col1, col2 = st.columns([2, 1])
+with tab_pdf:
+    col_content, col_settings = st.columns([2, 1])
     
-    with col2:
-        st.markdown("### 📌 زانیارییەکان")
-        title = st.text_input("ناونیشانی بابەت:", "بابەتی نوێ")
-        subtitle = st.text_input("ژێرنووس (پوختە):", "")
+    with col_settings:
+        st.markdown("<h3 style='color:#0f172a;'>⚙️ ڕێکخستنی پەڕە</h3>", unsafe_allow_html=True)
+        title = st.text_input("📌 ناونیشانی سەرەکی:", "فێربوونی زمانی فارسی")
+        subtitle = st.text_input("💡 ژێرنووس (وانە یان بەش):", "وانەی ١")
         
         st.markdown("---")
-        export_format = st.radio("جۆری فایلەکە هەڵبژێرە:", ["دەمەوێت فایلی PDF دروست بکەم 📄", "دەمەوێت سلایدی پاوەرپۆینت دروست بکەم 📊"])
-        
-        audio_link = st.text_input("🔗 لینکی دەنگ/ڤیدیۆ (ئارەزوومەندانە):", placeholder="ئەگەر لینکت هەیە لێرە دایبنێ...")
-        
-        st.markdown("---")
-        st.markdown("### 🎨 دیزاینەکان")
-        active_theme = st.selectbox("قاڵبی پەڕەکە هەڵبژێرە:", [
-            "دەفتەری تێبینی (هێڵکار)", 
-            "پزیشکی و زانستی (شین)", 
-            "کلاسیک و ئەدەبی (قاوەیی)",
-            "تەکنەلۆژیا (تاریک و مۆدێرن)",
-            "سروشتی و ژینگە (سەوز)",
-            "شاهانە (ڕەش و زێڕین)",
-            "ڕۆمانسی و شیعر (پەمەیی)",
-            "فەرمی و ئیداری (ڕەساسی)",
-            "تۆڕی زانستی (گرافیک)",
-            "گفتوگۆ و زمان (مۆر)"
+        st.markdown("### 🎨 دیزاینی پێشکەوتوو")
+        active_theme = st.selectbox("قاڵب هەڵبژێرە:", [
+            "زمان و دیالۆگ (شێوەی چات 💬)", 
+            "پزیشکی و ئەکادیمی (فەرمی 🩺)", 
+            "کتێبی کلاسیک (قاوەیی کراوە 📖)",
+            "مۆدێرن و تاریک (Dark Mode 🌙)"
         ])
         
-        cover_page = st.checkbox("پەڕەی بەرگ دروست بکە", value=True)
-        show_flag = st.checkbox("ئاڵای کوردستان دابنێ", value=True)
-
-    with col1:
-        st.info("💡 **زانیاری:** دەتوانیت زمانی کوردی و ئینگلیزی تێکەڵ بکەیت، سیستەمەکە خۆی ئاڕاستەی وشەکان ڕاست دەکاتەوە.")
-        raw_text = st.text_area("دەقەکەت لێرە دابنێ:", value=st.session_state.doc_content, height=400)
+        language_dir = st.selectbox("🌐 ئاڕاستەی دەق:", ["ڕاست بۆ چەپ (کوردی، عەرەبی، فارسی)", "چەپ بۆ ڕاست (English)"])
         
-        if "PDF" in export_format:
-            if st.button("📄 دروستکردنی فایلی PDF", use_container_width=True, type="primary"):
-                if not raw_text.strip():
-                    st.error("تکایە دەقێک بنووسە.")
-                else:
-                    with st.spinner("ئامادەکردنی PDF..."):
-                        lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
-                        
-                        # ١٠ دیزاینە جیاوازەکە
-                        themes = {
-                            "دەفتەری تێبینی (هێڵکار)": {"primary": "#334155", "bg": "repeating-linear-gradient(#f8fafc, #f8fafc 38px, #cbd5e1 38px, #cbd5e1 39px)", "card": "rgba(255,255,255,0.9)", "border": "#64748b", "accent": "#f1f5f9"},
-                            "پزیشکی و زانستی (شین)": {"primary": "#0369a1", "bg": "#f0f9ff", "card": "#ffffff", "border": "#0ea5e9", "accent": "#bae6fd"},
-                            "کلاسیک و ئەدەبی (قاوەیی)": {"primary": "#92400e", "bg": "#fefce8", "card": "#ffffff", "border": "#d97706", "accent": "#fde68a"},
-                            "تەکنەلۆژیا (تاریک و مۆدێرن)": {"primary": "#38bdf8", "bg": "#0f172a", "card": "#1e293b", "border": "#0284c7", "accent": "#0f172a", "text": "#f8fafc"},
-                            "سروشتی و ژینگە (سەوز)": {"primary": "#15803d", "bg": "#f0fdf4", "card": "#ffffff", "border": "#22c55e", "accent": "#bbf7d0"},
-                            "شاهانە (ڕەش و زێڕین)": {"primary": "#fbbf24", "bg": "#171717", "card": "#262626", "border": "#d97706", "accent": "#171717", "text": "#fef3c7"},
-                            "ڕۆمانسی و شیعر (پەمەیی)": {"primary": "#be185d", "bg": "#fdf2f8", "card": "#ffffff", "border": "#f43f5e", "accent": "#fbcfe8"},
-                            "فەرمی و ئیداری (ڕەساسی)": {"primary": "#374151", "bg": "#f3f4f6", "card": "#ffffff", "border": "#9ca3af", "accent": "#e5e7eb"},
-                            "تۆڕی زانستی (گرافیک)": {"primary": "#0f766e", "bg": "linear-gradient(#ccfbf1 1px, transparent 1px), linear-gradient(90deg, #ccfbf1 1px, transparent 1px)", "card": "rgba(255,255,255,0.95)", "border": "#14b8a6", "accent": "#ccfbf1"},
-                            "گفتوگۆ و زمان (مۆر)": {"primary": "#6d28d9", "bg": "#f5f3ff", "card": "#ffffff", "border": "#8b5cf6", "accent": "#ddd6fe"}
+        cover_page = st.checkbox("📄 دروستکردنی پەڕەی بەرگ (Cover)", value=True)
+        watermark = st.text_input("🔏 هێمای ئاو (ناوێک بنووسە بۆ ناوەڕاستی پەڕەکان):", "")
+
+    with col_content:
+        st.info("💡 **تایبەتمەندییەکان:** `#` بۆ سەردێڕ | `**وشە**` بۆ تۆخکردن | `==وشە==` بۆ هایلایت | `|وشە|وشە|` بۆ خشتە. ئەگەر دیالۆگ بنووسیت وەکو (سیاوش: سلام)، ئەوا خۆی دەیکاتە بڵقی چات!")
+        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە بەشی AI بیهێنە):", value=st.session_state.doc_content, height=450)
+        
+        if st.button("🚀 بەرهەمهێنانی PDF بە کوالێتی بەرز", type="primary", use_container_width=True):
+            if not raw_text.strip():
+                st.error("⚠️ تکایە دەقێک بنووسە.")
+            else:
+                with st.spinner("⏳ مۆتۆڕەکە خەریکی داڕشتنی دیزاینەکانە..."):
+                    lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
+                    is_rtl = "ڕاست" in language_dir
+                    dir_attr = "rtl" if is_rtl else "ltr"
+                    align_attr = "right" if is_rtl else "left"
+                    alt_align = "left" if is_rtl else "right"
+                    
+                    # دیزاینە زەخمەکان
+                    themes = {
+                        "زمان و دیالۆگ (شێوەی چات 💬)": {
+                            "bg": "#f0fdf4", "primary": "#166534", "text": "#0f172a", 
+                            "chat1": "#dcf8c6", "chat2": "#ffffff", "border": "#22c55e",
+                            "font": "Amiri"
+                        },
+                        "پزیشکی و ئەکادیمی (فەرمی 🩺)": {
+                            "bg": "#ffffff", "primary": "#0369a1", "text": "#1e293b", 
+                            "chat1": "#f1f5f9", "chat2": "#e2e8f0", "border": "#0284c7",
+                            "font": "Amiri"
+                        },
+                        "کتێبی کلاسیک (قاوەیی کراوە 📖)": {
+                            "bg": "#fdf8f5", "primary": "#78350f", "text": "#451a03", 
+                            "chat1": "#fef3c7", "chat2": "#ffedd5", "border": "#d97706",
+                            "font": "Amiri"
+                        },
+                        "مۆدێرن و تاریک (Dark Mode 🌙)": {
+                            "bg": "#0f172a", "primary": "#38bdf8", "text": "#f8fafc", 
+                            "chat1": "#1e293b", "chat2": "#334155", "border": "#0ea5e9",
+                            "font": "Amiri"
                         }
-                        
-                        t_style = themes.get(active_theme)
-                        text_color = t_style.get("text", "#0f172a")
-                        
-                        content_blocks = ""
-                        for line in lines:
-                            line = re.sub(r'\*\*(.*?)\*\*', f'<strong style="color: {t_style["primary"]};">\\1</strong>', line)
+                    }
+                    t = themes[active_theme]
+                    
+                    content_blocks = ""
+                    in_table = False
+                    table_content = ""
+                    speakers = []
+
+                    for line in lines:
+                        # فۆرماتکردنی دەق
+                        line = re.sub(r'\*\*(.*?)\*\*', f'<strong style="color:{t["primary"]}; font-weight:900;">\\1</strong>', line)
+                        line = re.sub(r'==(.*?)==', f'<span style="background-color:#fef08a; color:#1f2937; padding:2px 6px; border-radius:4px;">\\1</span>', line)
+
+                        # سەردێڕ
+                        if line.startswith("#"):
+                            if in_table:
+                                content_blocks += f'<table class="premium-table">{table_content}</table>'
+                                in_table = False; table_content = ""
                             
-                            # لێرە کێشەی دوو زمانی چارەسەر کراوە بە (dir="auto")
-                            if line.startswith("#"):
-                                content_blocks += f'<div dir="auto" style="text-align: start; background: {t_style["accent"]}; padding: 15px; border-radius: 8px; margin: 25px 0 15px 0; border-right: 6px solid {t_style["primary"]};"><h2 style="margin:0; color:{t_style["primary"]};">{line.replace("#", "").strip()}</h2></div>'
-                            elif "|" in line:
-                                cells = [c.strip() for c in line.split("|") if c.strip()]
-                                row_html = "".join([f'<td style="border: 1px solid {t_style["border"]}; padding: 10px;">{c}</td>' for c in cells])
-                                content_blocks += f'<table dir="auto" style="width:100%; border-collapse: collapse; margin: 15px 0; color: {text_color};"><tr>{row_html}</tr></table>'
-                            else:
-                                content_blocks += f'<div style="background:{t_style["card"]}; padding:15px; border-radius:8px; margin-bottom:10px; border-right:4px solid {t_style["border"]};"><p dir="auto" style="text-align: start; margin:0; color: {text_color};">{line}</p></div>'
+                            header_text = line.replace("#", "").strip()
+                            content_blocks += f'<div class="premium-header"><h2 style="margin:0;">{header_text}</h2></div>'
 
-                        audio_btn = f'<div style="text-align: center; margin: 30px 0;"><a href="{audio_link}" style="background-color: #e11d48; color: white; padding: 15px 30px; text-decoration: none; font-size: 16pt; border-radius: 10px; font-weight: bold; display: inline-block;">🔊 کلیک لێرە بکە بۆ کردنەوەی دەنگ / ڤیدیۆ</a></div>' if audio_link else ""
+                        # خشتە ئەکادیمییەکان
+                        elif "|" in line:
+                            if not in_table: in_table = True
+                            cells = [c.strip() for c in line.split("|") if c.strip()]
+                            row_html = "".join([f'<td>{c}</td>' for c in cells])
+                            table_content += f'<tr>{row_html}</tr>'
 
-                        flag_html = ""
-                        if show_flag:
-                            flag_html = """<div style="position: absolute; top: -10px; left: 10px;"><svg viewBox="0 0 300 200" style="width: 50px; border-radius: 4px;"><rect width="300" height="66.6" fill="#ED2024"/><rect y="66.6" width="300" height="66.6" fill="#FFFFFF"/><rect y="133.2" width="300" height="66.8" fill="#278E43"/><circle cx="150" cy="100" r="22" fill="#FEBD11"/></svg></div>"""
+                        # پارسەری دیالۆگ (شێوەی چاتی مۆدێرن)
+                        elif (":" in line or "：" in line) and "زمان" in active_theme:
+                            if in_table:
+                                content_blocks += f'<table class="premium-table">{table_content}</table>'
+                                in_table = False; table_content = ""
+                                
+                            parts = re.split(r'[:：]', line, maxsplit=1)
+                            sp, msg = parts[0].strip(), parts[1].strip()
+                            if sp not in speakers: speakers.append(sp)
+                            
+                            is_alt = (speakers.index(sp) % 2 == 1)
+                            bubble_class = "chat-bubble-alt" if is_alt else "chat-bubble"
+                            
+                            content_blocks += f'''
+                            <div class="chat-container">
+                                <div class="{bubble_class}">
+                                    <div class="chat-name">{sp}</div>
+                                    <div class="chat-msg">{msg}</div>
+                                </div>
+                            </div>
+                            '''
+                            
+                        # دەقی ئاسایی
+                        else:
+                            if in_table:
+                                content_blocks += f'<table class="premium-table">{table_content}</table>'
+                                in_table = False; table_content = ""
+                                
+                            content_blocks += f'<div class="normal-text">{line}</div>'
+                            
+                    if in_table:
+                        content_blocks += f'<table class="premium-table">{table_content}</table>'
 
-                        cover_html = f'''
-                        <div style="text-align: center; margin-top: 40%; page-break-after: always; position: relative;">
-                            {flag_html}
-                            <div style="display: inline-block; padding: 40px; border: 3px solid {t_style["border"]}; border-radius: 20px; background: {t_style["card"]};">
-                                <h1 style="font-size: 250%; color: {t_style["primary"]}; border-bottom: 4px solid {t_style["accent"]}; padding-bottom: 20px;">{title}</h1>
-                                <p style="font-size: 150%; color: {text_color};">{subtitle}</p>
+                    # CSS ـی زەبەلاح و پڕۆفیشناڵ
+                    css_string = f"""
+                    @page {{
+                        size: A4;
+                        margin: 20mm;
+                        background-color: {t["bg"]};
+                        @bottom-center {{
+                            content: counter(page);
+                            font-family: '{t["font"]}', sans-serif;
+                            font-size: 14pt;
+                            color: {t["primary"]};
+                            font-weight: bold;
+                        }}
+                    }}
+                    body {{
+                        font-family: '{t["font"]}', sans-serif;
+                        direction: {dir_attr};
+                        text-align: {align_attr};
+                        color: {t["text"]};
+                        font-size: 18pt;
+                        line-height: 2.2;
+                    }}
+                    .cover-page {{
+                        text-align: center;
+                        margin-top: 30%;
+                        page-break-after: always;
+                    }}
+                    .cover-box {{
+                        display: inline-block;
+                        padding: 50px 80px;
+                        border: 4px solid {t["primary"]};
+                        border-radius: 20px;
+                        background-color: {t["bg"]};
+                        box-shadow: 10px 10px 0px {t["border"]}40;
+                    }}
+                    .cover-title {{
+                        font-size: 45pt;
+                        color: {t["primary"]};
+                        border-bottom: 5px solid {t["border"]};
+                        padding-bottom: 20px;
+                        margin-bottom: 20px;
+                        font-weight: 900;
+                    }}
+                    .cover-subtitle {{
+                        font-size: 24pt;
+                        color: {t["text"]};
+                        opacity: 0.8;
+                    }}
+                    .premium-header {{
+                        background-color: {t["primary"]}15;
+                        padding: 20px;
+                        border-radius: 12px;
+                        border-{align_attr}: 8px solid {t["primary"]};
+                        margin: 40px 0 20px 0;
+                        color: {t["primary"]};
+                        page-break-after: avoid;
+                    }}
+                    .chat-container {{
+                        width: 100%;
+                        clear: both;
+                        margin-bottom: 20px;
+                        overflow: hidden;
+                        page-break-inside: avoid;
+                    }}
+                    .chat-bubble {{
+                        float: {align_attr};
+                        background-color: {t["chat1"]};
+                        padding: 15px 25px;
+                        border-radius: 25px 25px 25px 5px;
+                        border: 2px solid {t["border"]}50;
+                        max-width: 80%;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                    }}
+                    .chat-bubble-alt {{
+                        float: {alt_align};
+                        background-color: {t["chat2"]};
+                        padding: 15px 25px;
+                        border-radius: 25px 25px 5px 25px;
+                        border: 2px solid {t["border"]}50;
+                        max-width: 80%;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                    }}
+                    .chat-name {{
+                        font-weight: 900;
+                        color: {t["primary"]};
+                        font-size: 14pt;
+                        margin-bottom: 5px;
+                    }}
+                    .chat-msg {{
+                        font-size: 18pt;
+                        color: {t["text"]};
+                    }}
+                    .normal-text {{
+                        margin-bottom: 15px;
+                        text-align: justify;
+                        padding: 10px;
+                    }}
+                    .premium-table {{
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 30px 0;
+                        background-color: {t["chat2"]};
+                        border-radius: 10px;
+                        overflow: hidden;
+                        border: 2px solid {t["primary"]};
+                    }}
+                    .premium-table td {{
+                        border: 1px solid {t["border"]}50;
+                        padding: 15px;
+                        text-align: center;
+                    }}
+                    .premium-table tr:nth-child(even) {{
+                        background-color: {t["chat1"]};
+                    }}
+                    .watermark {{
+                        position: fixed;
+                        top: 45%;
+                        left: 20%;
+                        transform: rotate(-45deg);
+                        font-size: 80pt;
+                        font-weight: 900;
+                        color: {t["primary"]};
+                        opacity: 0.05;
+                        z-index: -1;
+                    }}
+                    """
+
+                    cover_html = f'''
+                    <div class="cover-page">
+                        <div class="cover-box">
+                            <div class="cover-title">{title}</div>
+                            <div class="cover-subtitle">{subtitle}</div>
+                            <div style="margin-top: 40px; font-size: 14pt; color: {t["primary"]}; font-weight: bold;">
+                                {datetime.datetime.now().strftime("%Y-%m-%d")}
                             </div>
                         </div>
-                        ''' if cover_page else flag_html
+                    </div>
+                    ''' if cover_page else f'<h1 style="color:{t["primary"]}; text-align:center; font-size:35pt; border-bottom:3px solid {t["border"]}; padding-bottom:15px;">{title}</h1><h3 style="text-align:center; opacity:0.7;">{subtitle}</h3>'
 
-                        bg_property = f'background: {t_style["bg"]};' if "gradient" in t_style["bg"] else f'background-color: {t_style["bg"]};'
+                    watermark_html = f'<div class="watermark">{watermark}</div>' if watermark else ""
 
-                        final_html = f"""
-                        <html>
-                        <head><style>@page {{ size: A4; margin: 20mm; {bg_property} }} body {{ font-family: 'Amiri', Tahoma, sans-serif; font-size: 16pt; line-height: 1.8; }}</style></head>
-                        <body>
-                            {cover_html}
-                            <h1 dir="auto" style="color:{t_style["primary"]}; text-align:center;">{title}</h1>
-                            <h3 dir="auto" style="color:#64748b; text-align:center;">{subtitle}</h3>
-                            {audio_btn}
-                            {content_blocks}
-                        </body></html>
-                        """
-                        
-                        pdf_buf = io.BytesIO()
-                        HTML(string=final_html).write_pdf(target=pdf_buf)
-                        st.success("✅ فایلەکە بە سەرکەوتوویی ئامادە کرا.")
-                        st.download_button("📥 داگرتنی فایلی PDF", data=pdf_buf.getvalue(), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
-
-        elif "PowerPoint" in export_format:
-            if st.button("📊 دروستکردنی سلایدی پاوەرپۆینت", use_container_width=True, type="primary"):
-                if not raw_text.strip():
-                    st.error("تکایە دەقێک بنووسە.")
-                else:
-                    with st.spinner("ئامادەکردنی پاوەرپۆینت..."):
-                        prs = Presentation()
-                        
-                        # پەڕەی سەرەتا
-                        title_slide_layout = prs.slide_layouts[0]
-                        slide = prs.slides.add_slide(title_slide_layout)
-                        slide.shapes.title.text = title
-                        slide.placeholders[1].text = subtitle
-                        if audio_link:
-                            slide.placeholders[1].text += f"\n\nلینکی ڤیدیۆ/دەنگ: {audio_link}"
-                        
-                        lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
-                        current_slide = None
-                        tf = None
-                        
-                        for line in lines:
-                            clean_line = line.replace("**", "").replace("==", "")
-                            if clean_line.startswith("#"):
-                                slide_layout = prs.slide_layouts[1]
-                                current_slide = prs.slides.add_slide(slide_layout)
-                                current_slide.shapes.title.text = clean_line.replace("#", "").strip()
-                                tf = current_slide.placeholders[1].text_frame
-                            elif current_slide and tf:
-                                p = tf.add_paragraph()
-                                p.text = clean_line
-                            else:
-                                slide_layout = prs.slide_layouts[1]
-                                current_slide = prs.slides.add_slide(slide_layout)
-                                current_slide.shapes.title.text = "زانیاری گشتی"
-                                tf = current_slide.placeholders[1].text_frame
-                                p = tf.add_paragraph()
-                                p.text = clean_line
-                                
-                        ppt_buf = io.BytesIO()
-                        prs.save(ppt_buf)
-                        st.success("✅ پاوەرپۆینتەکە ئامادەیە.")
-                        st.download_button("📥 داگرتنی پاوەرپۆینت", data=ppt_buf.getvalue(), file_name=f"{title}.pptx", mime="application/vnd.openxmlformats-officedocument.presentationml.presentation", use_container_width=True)
-
-with tab_image:
-    st.markdown("### 🖼️ گۆڕینی وێنە بۆ PDF")
-    st.info("ئەگەر تێبینی یان وێنەی کتێبت هەیە، لێرە ئەپڵۆدی بکە بۆ ئەوەی ڕاستەوخۆ بیکاتە فایلی PDF.")
-    uploaded_images = st.file_uploader("وێنەکانت هەڵبژێرە:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
-    
-    if uploaded_images:
-        if st.button("📄 دروستکردنی PDF لە وێنەکان", type="primary"):
-            with st.spinner("خەریکی بەستنەوەی وێنەکانە..."):
-                img_html_content = ""
-                for img_file in uploaded_images:
-                    encoded = base64.b64encode(img_file.read()).decode()
-                    mime_type = img_file.type
-                    img_html_content += f'<div style="text-align:center; page-break-after:always;"><img src="data:{mime_type};base64,{encoded}" style="max-width:100%; max-height:100vh; object-fit:contain;"></div>'
-                
-                final_img_pdf = f"<html><head><style>@page {{ size: A4; margin: 0; }} body {{ margin: 0; padding: 0; }}</style></head><body>{img_html_content}</body></html>"
-                pdf_buf = io.BytesIO()
-                HTML(string=final_img_pdf).write_pdf(target=pdf_buf)
-                st.success("✅ وێنەکان کران بە فایلی PDF.")
-                st.download_button("📥 داگرتنی PDF", data=pdf_buf.getvalue(), file_name="Images_to_Document.pdf", mime="application/pdf")
+                    final_html = f"""
+                    <!DOCTYPE html>
+                    <html dir="{dir_attr}">
+                    <head>
+                        <meta charset="utf-8">
+                        <style>{css_string}</style>
+                    </head>
+                    <body>
+                        {watermark_html}
+                        {cover_html}
+                        <div>{content_blocks}</div>
+                    </body>
+                    </html>
+                    """
+                    
+                    pdf_buf = io.BytesIO()
+                    HTML(string=final_html).write_pdf(target=pdf_buf)
+                    
+                    st.success("✅ ئامادەیە! فایلە شاهانەکەت دروستکرا.")
+                    st.download_button("📥 داگرتنی فایلی PDF", data=pdf_buf.getvalue(), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
 
 with tab_ai:
-    st.markdown("### 🤖 دروستکردنی ناوەڕۆک بە زیرەکی دەستکرد")
-    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password")
+    st.markdown("### 🤖 دروستکردنی ناوەڕۆک بە ژیری دەستکرد")
     
-    ai_input_text = st.text_area("✍️ چی بنووسم بۆت؟", placeholder="نموونە: بابەتێک لەسەر چارەسەری نەخۆشی شەکرە...")
+    st.info("💡 **پێویستت بە کلیلی API هەیە.** ئەگەر نیتە، بڕۆ بۆ [Google AI Studio](https://aistudio.google.com/app/apikey) و دانەیەک دروست بکە و لێرە دایبنێ.")
+    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="AIzaSy...")
     
-    if st.button("✨ داواکردن لە AI", type="primary"):
-        if not user_api_key or not ai_input_text:
-            st.error("کلیل و داواکارییەکە پڕ بکەرەوە.")
+    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="نموونە: دیالۆگێک بە زمانی فارسی بنووسە لە نێوان دوو کەس لەسەر چوون بۆ بازاڕ...", height=150)
+    
+    if st.button("✨ داواکردن لە AI و هێنانە ناوەوە", type="primary", use_container_width=True):
+        if not user_api_key:
+            st.error("⚠️ تکایە سەرەتا کلیلی API دابنێ.")
+        elif not ai_input_text.strip():
+            st.error("⚠️ تکایە داواکارییەک بنووسە.")
         else:
-            with st.spinner("🤖 خەریکی نووسینە..."):
+            with st.spinner("🤖 خەریکی بیرکردنەوە و نووسینە..."):
                 try:
                     genai.configure(api_key=user_api_key)
                     model = genai.GenerativeModel('gemini-1.5-flash')
-                    response = model.generate_content(f"وەڵامەکەت ڕێکبخە. بۆ هەر بەشێک سەردێڕی # بەکاربهێنە. \n\n {ai_input_text}")
+                    response = model.generate_content(f"وەڵامەکەت با زۆر ڕێکخراو بێت. ئەگەر دیالۆگە با شێوازی ناوی کەسەکە و دوو خاڵ بێت وەکو (عەلی: سڵاو). ئەگەر زانیارییە سەردێڕەکان بە # بنووسە. \n\nداواکاری: {ai_input_text}")
                     st.session_state.doc_content = response.text
-                    st.success("✅ ئامادەیە! بڕۆ تابـی یەکەم (داڕشتنی دەق) بۆ بینین و گۆڕینی بۆ PDF یان پاوەرپۆینت.")
+                    st.success("✅ دەقەکە ئامادەیە! ناوەڕۆکەکە خرایە ناو خانەی نووسین لە تابـی 'دروستکردنی PDF'. بڕۆ ئەوێ بۆ دیزاینکردنی.")
                 except Exception as e:
-                    st.error(f"❌ هەڵەیەک ڕوویدا: {e}")
+                    st.error(f"❌ کێشەیەک ڕوویدا لە بەستنەوە بە AI. دڵنیابە کلیلەکەت ڕاستە. (وردەکاری: {e})")
 
-st.markdown("<br><hr><p style='text-align: center; color: #94a3b8;'>داڕێژەری زیرەک © 2026</p>", unsafe_allow_html=True)
+st.markdown("<br><hr><p style='text-align: center; color: #94a3b8; font-weight: bold;'>دروستکراوە بە تەکنەلۆژیای پێشکەوتوو © 2026</p>", unsafe_allow_html=True)
