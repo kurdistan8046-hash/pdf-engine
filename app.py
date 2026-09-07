@@ -36,8 +36,8 @@ with tab_pdf:
     
     with col_settings:
         st.markdown("<h3 style='color:#0f172a;'>⚙️ ڕێکخستنی پەڕە</h3>", unsafe_allow_html=True)
-        title = st.text_input("📌 ناونیشانی سەرەکی:", "نەخۆشی شەکرە")
-        subtitle = st.text_input("💡 ژێرنووس (وانە یان بەش):", "نیشانەکان و خۆپاراستن")
+        title = st.text_input("📌 ناونیشانی سەرەکی:", value="", placeholder="ناونیشانی بابەتەکەت لێرە بنووسە...")
+        subtitle = st.text_input("💡 ژێرنووس (وانە یان بەش):", value="", placeholder="بۆ نموونە: بەشی یەکەم...")
         
         st.markdown("---")
         st.markdown("### 🎨 دیزاینی پێشکەوتوو")
@@ -51,11 +51,11 @@ with tab_pdf:
         language_dir = st.selectbox("🌐 ئاڕاستەی دەق:", ["ڕاست بۆ چەپ (کوردی، عەرەبی، فارسی)", "چەپ بۆ ڕاست (English)"])
         
         cover_page = st.checkbox("📄 دروستکردنی پەڕەی بەرگ (Cover)", value=True)
-        watermark = st.text_input("🔏 هێمای ئاو (ناوێک بنووسە بۆ ناوەڕاستی پەڕەکان):", "")
+        watermark = st.text_input("🔏 هێمای ئاو (ناوێک بنووسە بۆ ناوەڕاستی پەڕەکان):", placeholder="ناو یان لۆگۆی خۆت...")
 
     with col_content:
-        st.info("💡 **تایبەتمەندییەکان:** `#` بۆ سەردێڕ | `**وشە**` بۆ تۆخکردن | `==وشە==` بۆ هایلایت | `|وشە|وشە|` بۆ خشتە. ئەگەر دیالۆگ بنووسیت وەکو (پزیشک: فەرموو دابنیشە)، ئەوا خۆی دەیکاتە بڵقی چات!")
-        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە بەشی AI بیهێنە):", value=st.session_state.doc_content, height=450)
+        st.info("💡 **تایبەتمەندییەکان:** `#` بۆ سەردێڕ | `**وشە**` بۆ تۆخکردن | `==وشە==` بۆ هایلایت | `|وشە|وشە|` بۆ خشتە. ئەگەر دیالۆگ بنووسیت وەکو (ناوی کەس: قسەکە)، ئەوا خۆی دەیکاتە بڵقی چات!")
+        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە بەشی AI بیهێنە):", value=st.session_state.doc_content, height=450, placeholder="دەقەکانت لێرە بنووسە یان کۆپی بکە...")
         
         if st.button("🚀 بەرهەمهێنانی PDF بە کوالێتی بەرز", type="primary", use_container_width=True):
             if not raw_text.strip():
@@ -68,7 +68,6 @@ with tab_pdf:
                     align_attr = "right" if is_rtl else "left"
                     alt_align = "left" if is_rtl else "right"
                     
-                    # دیزاینە زەخمەکان
                     themes = {
                         "زمان و دیالۆگ (شێوەی چات 💬)": {
                             "bg": "#f0fdf4", "primary": "#166534", "text": "#0f172a", 
@@ -99,11 +98,9 @@ with tab_pdf:
                     speakers = []
 
                     for line in lines:
-                        # فۆرماتکردنی دەق
                         line = re.sub(r'\*\*(.*?)\*\*', f'<strong style="color:{t["primary"]}; font-weight:900;">\\1</strong>', line)
                         line = re.sub(r'==(.*?)==', f'<span style="background-color:#fef08a; color:#1f2937; padding:2px 6px; border-radius:4px;">\\1</span>', line)
 
-                        # سەردێڕ
                         if line.startswith("#"):
                             if in_table:
                                 content_blocks += f'<table class="premium-table">{table_content}</table>'
@@ -112,14 +109,12 @@ with tab_pdf:
                             header_text = line.replace("#", "").strip()
                             content_blocks += f'<div class="premium-header"><h2 style="margin:0;">{header_text}</h2></div>'
 
-                        # خشتە ئەکادیمییەکان
                         elif "|" in line:
                             if not in_table: in_table = True
                             cells = [c.strip() for c in line.split("|") if c.strip()]
                             row_html = "".join([f'<td>{c}</td>' for c in cells])
                             table_content += f'<tr>{row_html}</tr>'
 
-                        # پارسەری دیالۆگ (شێوەی چاتی مۆدێرن)
                         elif (":" in line or "：" in line) and "زمان" in active_theme:
                             if in_table:
                                 content_blocks += f'<table class="premium-table">{table_content}</table>'
@@ -141,7 +136,6 @@ with tab_pdf:
                             </div>
                             '''
                             
-                        # دەقی ئاسایی
                         else:
                             if in_table:
                                 content_blocks += f'<table class="premium-table">{table_content}</table>'
@@ -152,7 +146,6 @@ with tab_pdf:
                     if in_table:
                         content_blocks += f'<table class="premium-table">{table_content}</table>'
 
-                    # CSS ـی زەبەلاح و پڕۆفیشناڵ
                     css_string = f"""
                     @page {{
                         size: A4;
@@ -279,17 +272,20 @@ with tab_pdf:
                     }}
                     """
 
+                    doc_title = title if title.strip() else "Document"
+                    doc_subtitle = subtitle if subtitle.strip() else ""
+
                     cover_html = f'''
                     <div class="cover-page">
                         <div class="cover-box">
-                            <div class="cover-title">{title}</div>
-                            <div class="cover-subtitle">{subtitle}</div>
+                            <div class="cover-title">{doc_title}</div>
+                            <div class="cover-subtitle">{doc_subtitle}</div>
                             <div style="margin-top: 40px; font-size: 14pt; color: {t["primary"]}; font-weight: bold;">
                                 {datetime.datetime.now().strftime("%Y-%m-%d")}
                             </div>
                         </div>
                     </div>
-                    ''' if cover_page else f'<h1 style="color:{t["primary"]}; text-align:center; font-size:35pt; border-bottom:3px solid {t["border"]}; padding-bottom:15px;">{title}</h1><h3 style="text-align:center; opacity:0.7;">{subtitle}</h3>'
+                    ''' if cover_page else f'<h1 style="color:{t["primary"]}; text-align:center; font-size:35pt; border-bottom:3px solid {t["border"]}; padding-bottom:15px;">{doc_title}</h1><h3 style="text-align:center; opacity:0.7;">{doc_subtitle}</h3>'
 
                     watermark_html = f'<div class="watermark">{watermark}</div>' if watermark else ""
 
@@ -312,27 +308,33 @@ with tab_pdf:
                     HTML(string=final_html).write_pdf(target=pdf_buf)
                     
                     st.success("✅ ئامادەیە! فایلە شاهانەکەت دروستکرا.")
-                    st.download_button("📥 داگرتنی فایلی PDF", data=pdf_buf.getvalue(), file_name=f"{title}.pdf", mime="application/pdf", use_container_width=True)
+                    st.download_button("📥 داگرتنی فایلی PDF", data=pdf_buf.getvalue(), file_name=f"{doc_title.replace(' ', '_')}.pdf", mime="application/pdf", use_container_width=True)
 
 with tab_ai:
     st.markdown("### 🤖 دروستکردنی ناوەڕۆک بە ژیری دەستکرد")
     
-    with st.expander("ℹ️ چۆنیەتی هێنانی کلیلی API (تایبەت بە خۆت)", expanded=True):
+    with st.expander("ℹ️ بۆچی پێویستم بە کلیلی API هەیە و چۆن دەستی بخەم؟", expanded=True):
         st.markdown("""
-        ئەم کلیلە **تایبەتە بە خۆت (Individualized)** و بە تەواوی پارێزراوە، لە هیچ سێرڤەرێک پاشەکەوت ناکرێت. بۆ وەرگرتنی:
+        **بۆچی پێویستە؟**  
+        ئەم پلاتفۆرمە بە شێوەیەکی ڕاستەوخۆ پشت بە مۆتۆڕی ژیری دەستکردی گووگڵ (Gemini) دەبەستێت بۆ دروستکردن و ڕێکخستنی بابەتەکان. بۆ ئەوەی خزمەتگوزارییەکە بە خۆڕایی و بێسنوور بێت بۆت، دەبێت هەر بەکارهێنەرێک کلیلی تایبەت بە خۆی هەبێت.
+        
+        **پارێزراوی کلیلەکە:**  
+        ئەم کلیلە **تایبەتە بە خۆت (Individualized)** و بە تەواوی پارێزراوە، لە هیچ سێرڤەرێک پاشەکەوت ناکرێت و تەنها لە کاتی کارکردنی خۆتدا لەسەر شاشەکەت چالاکە.
+        
+        **چۆنیەتی وەرگرتنی کلیل:**
         1. بڕۆ بۆ ماڵپەڕی فەرمی [Google AI Studio](https://aistudio.google.com/app/apikey).
         2. بە ئیمەیڵەکەت (Gmail) بچۆ ژوورەوە.
-        3. لەوێ کلیک لە دوگمەی شین بکە کە نووسراوە **Create API key** و کلیلەکە کۆپی بکە.
+        3. کلیک لە دوگمەی **Create API key** بکە و کلیلەکە کۆپی بکە.
         4. کلیلەکە بهێنە و لەم خانەیەی خوارەوە دایبنێ.
         """)
         
-    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="کلیلەکەت لێرە دابنێ (AIzaSy...)")
+    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="کلیلەکەت لێرە دابنێ...")
     
-    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="نموونە: ٥ خاڵی گرنگ بنووسە لەسەر نیشانەکانی نەخۆشی شەکرە و چۆنیەتی خۆپاراستن لێی بە شێوەی خشتە...", height=150)
+    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="لێرە بە کوردی بە سیستەمەکە بڵێ چیت دەوێت بۆت ئامادە بکات...", height=150)
     
     if st.button("✨ داواکردن لە AI و هێنانە ناوەوە", type="primary", use_container_width=True):
         if not user_api_key:
-            st.error("⚠️ تکایە سەرەتا کلیلی تایبەتی خۆت دابنێ.")
+            st.error("⚠️ تکایە سەرەتا کلیلی تایبەتی خۆت دابنێ لە خانەی سەرەوە.")
         elif not ai_input_text.strip():
             st.error("⚠️ تکایە داواکارییەک بنووسە.")
         else:
@@ -340,7 +342,7 @@ with tab_ai:
                 try:
                     genai.configure(api_key=user_api_key)
                     model = genai.GenerativeModel('gemini-1.5-flash')
-                    response = model.generate_content(f"وەڵامەکەت با زۆر ڕێکخراو بێت. ئەگەر دیالۆگە با شێوازی ناوی کەسەکە و دوو خاڵ بێت وەکو (پزیشک: فەرموو). ئەگەر زانیارییە سەردێڕەکان بە # بنووسە و زانیارییە گرنگەکان بکە بە خشتە. \n\nداواکاری: {ai_input_text}")
+                    response = model.generate_content(f"وەڵامەکەت با زۆر ڕێکخراو بێت. ئەگەر دیالۆگە با شێوازی ناوی کەسەکە و دوو خاڵ بێت وەکو (ناوی کەس: قسەکە). ئەگەر زانیارییە سەردێڕەکان بە # بنووسە و زانیارییە گرنگەکان بکە بە خشتە. \n\nداواکاری: {ai_input_text}")
                     st.session_state.doc_content = response.text
                     st.success("✅ دەقەکە ئامادەیە! ناوەڕۆکەکە خرایە ناو خانەی نووسین لە تابـی 'دروستکردنی PDF'. بڕۆ ئەوێ بۆ دیزاینکردنی.")
                 except Exception as e:
