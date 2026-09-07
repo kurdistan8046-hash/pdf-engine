@@ -36,14 +36,14 @@ with tab_pdf:
     
     with col_settings:
         st.markdown("<h3 style='color:#0f172a;'>⚙️ ڕێکخستنی پەڕە</h3>", unsafe_allow_html=True)
-        title = st.text_input("📌 ناونیشانی سەرەکی:", "فێربوونی زمانی فارسی")
-        subtitle = st.text_input("💡 ژێرنووس (وانە یان بەش):", "وانەی ١")
+        title = st.text_input("📌 ناونیشانی سەرەکی:", "نەخۆشی شەکرە")
+        subtitle = st.text_input("💡 ژێرنووس (وانە یان بەش):", "نیشانەکان و خۆپاراستن")
         
         st.markdown("---")
         st.markdown("### 🎨 دیزاینی پێشکەوتوو")
         active_theme = st.selectbox("قاڵب هەڵبژێرە:", [
-            "زمان و دیالۆگ (شێوەی چات 💬)", 
             "پزیشکی و ئەکادیمی (فەرمی 🩺)", 
+            "زمان و دیالۆگ (شێوەی چات 💬)", 
             "کتێبی کلاسیک (قاوەیی کراوە 📖)",
             "مۆدێرن و تاریک (Dark Mode 🌙)"
         ])
@@ -54,7 +54,7 @@ with tab_pdf:
         watermark = st.text_input("🔏 هێمای ئاو (ناوێک بنووسە بۆ ناوەڕاستی پەڕەکان):", "")
 
     with col_content:
-        st.info("💡 **تایبەتمەندییەکان:** `#` بۆ سەردێڕ | `**وشە**` بۆ تۆخکردن | `==وشە==` بۆ هایلایت | `|وشە|وشە|` بۆ خشتە. ئەگەر دیالۆگ بنووسیت وەکو (سیاوش: سلام)، ئەوا خۆی دەیکاتە بڵقی چات!")
+        st.info("💡 **تایبەتمەندییەکان:** `#` بۆ سەردێڕ | `**وشە**` بۆ تۆخکردن | `==وشە==` بۆ هایلایت | `|وشە|وشە|` بۆ خشتە. ئەگەر دیالۆگ بنووسیت وەکو (پزیشک: فەرموو دابنیشە)، ئەوا خۆی دەیکاتە بڵقی چات!")
         raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە بەشی AI بیهێنە):", value=st.session_state.doc_content, height=450)
         
         if st.button("🚀 بەرهەمهێنانی PDF بە کوالێتی بەرز", type="primary", use_container_width=True):
@@ -317,14 +317,22 @@ with tab_pdf:
 with tab_ai:
     st.markdown("### 🤖 دروستکردنی ناوەڕۆک بە ژیری دەستکرد")
     
-    st.info("💡 **پێویستت بە کلیلی API هەیە.** ئەگەر نیتە، بڕۆ بۆ [Google AI Studio](https://aistudio.google.com/app/apikey) و دانەیەک دروست بکە و لێرە دایبنێ.")
-    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="AIzaSy...")
+    with st.expander("ℹ️ چۆنیەتی هێنانی کلیلی API (تایبەت بە خۆت)", expanded=True):
+        st.markdown("""
+        ئەم کلیلە **تایبەتە بە خۆت (Individualized)** و بە تەواوی پارێزراوە، لە هیچ سێرڤەرێک پاشەکەوت ناکرێت. بۆ وەرگرتنی:
+        1. بڕۆ بۆ ماڵپەڕی فەرمی [Google AI Studio](https://aistudio.google.com/app/apikey).
+        2. بە ئیمەیڵەکەت (Gmail) بچۆ ژوورەوە.
+        3. لەوێ کلیک لە دوگمەی شین بکە کە نووسراوە **Create API key** و کلیلەکە کۆپی بکە.
+        4. کلیلەکە بهێنە و لەم خانەیەی خوارەوە دایبنێ.
+        """)
+        
+    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="کلیلەکەت لێرە دابنێ (AIzaSy...)")
     
-    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="نموونە: دیالۆگێک بە زمانی فارسی بنووسە لە نێوان دوو کەس لەسەر چوون بۆ بازاڕ...", height=150)
+    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="نموونە: ٥ خاڵی گرنگ بنووسە لەسەر نیشانەکانی نەخۆشی شەکرە و چۆنیەتی خۆپاراستن لێی بە شێوەی خشتە...", height=150)
     
     if st.button("✨ داواکردن لە AI و هێنانە ناوەوە", type="primary", use_container_width=True):
         if not user_api_key:
-            st.error("⚠️ تکایە سەرەتا کلیلی API دابنێ.")
+            st.error("⚠️ تکایە سەرەتا کلیلی تایبەتی خۆت دابنێ.")
         elif not ai_input_text.strip():
             st.error("⚠️ تکایە داواکارییەک بنووسە.")
         else:
@@ -332,7 +340,7 @@ with tab_ai:
                 try:
                     genai.configure(api_key=user_api_key)
                     model = genai.GenerativeModel('gemini-1.5-flash')
-                    response = model.generate_content(f"وەڵامەکەت با زۆر ڕێکخراو بێت. ئەگەر دیالۆگە با شێوازی ناوی کەسەکە و دوو خاڵ بێت وەکو (عەلی: سڵاو). ئەگەر زانیارییە سەردێڕەکان بە # بنووسە. \n\nداواکاری: {ai_input_text}")
+                    response = model.generate_content(f"وەڵامەکەت با زۆر ڕێکخراو بێت. ئەگەر دیالۆگە با شێوازی ناوی کەسەکە و دوو خاڵ بێت وەکو (پزیشک: فەرموو). ئەگەر زانیارییە سەردێڕەکان بە # بنووسە و زانیارییە گرنگەکان بکە بە خشتە. \n\nداواکاری: {ai_input_text}")
                     st.session_state.doc_content = response.text
                     st.success("✅ دەقەکە ئامادەیە! ناوەڕۆکەکە خرایە ناو خانەی نووسین لە تابـی 'دروستکردنی PDF'. بڕۆ ئەوێ بۆ دیزاینکردنی.")
                 except Exception as e:
