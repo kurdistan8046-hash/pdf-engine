@@ -1,3 +1,4 @@
 weasyprint
 python-pptx
 google-generativeai
+Pillow
