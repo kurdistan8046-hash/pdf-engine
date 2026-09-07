@@ -11,7 +11,7 @@ st.set_page_config(page_title="PDF Pro Engine", page_icon="👑", layout="wide")
 if 'doc_content' not in st.session_state:
     st.session_state.doc_content = ""
 
-# دانانی ئاڵای کوردستان و ناونیشان لەسەر وێبسایتەکە بە دیزاینی شاهانە
+# دانانی ئاڵای کوردستان و ناونیشان
 st.markdown("""
 <div style="text-align: center; padding: 20px;">
     <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="width: 120px; height: auto; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 2px solid #e2e8f0;">
@@ -36,8 +36,8 @@ with tab_pdf:
     
     with col_settings:
         st.markdown("<h3 style='color:#0f172a;'>⚙️ ڕێکخستنی پەڕە</h3>", unsafe_allow_html=True)
-        title = st.text_input("📌 ناونیشانی سەرەکی:", value="", placeholder="ناونیشانی بابەتەکەت لێرە بنووسە...")
-        subtitle = st.text_input("💡 ژێرنووس (وانە یان بەش):", value="", placeholder="بۆ نموونە: بەشی یەکەم...")
+        title = st.text_input("📌 ناونیشانی سەرەکی:", value="", placeholder="بۆ نموونە: وانەی یەکەم...")
+        subtitle = st.text_input("💡 ژێرنووس (پوختە):", value="", placeholder="بۆ نموونە: پێشەکی بابەت...")
         
         st.markdown("---")
         st.markdown("### 🎨 دیزاینی پێشکەوتوو")
@@ -48,25 +48,55 @@ with tab_pdf:
             "مۆدێرن و تاریک (Dark Mode 🌙)"
         ])
         
-        language_dir = st.selectbox("🌐 ئاڕاستەی دەق:", ["ڕاست بۆ چەپ (کوردی، عەرەبی، فارسی)", "چەپ بۆ ڕاست (English)"])
+        language_dir = st.selectbox("🌐 ئاڕاستەی دەق:", [
+            "ڕاست بۆ چەپ (کوردی، عەرەبی، فارسی...)", 
+            "چەپ بۆ ڕاست (English, Türkçe...)",
+            "تێکەڵ (میکس - Auto)"
+        ])
         
         cover_page = st.checkbox("📄 دروستکردنی پەڕەی بەرگ (Cover)", value=True)
-        watermark = st.text_input("🔏 هێمای ئاو (ناوێک بنووسە بۆ ناوەڕاستی پەڕەکان):", placeholder="ناو یان لۆگۆی خۆت...")
+        watermark = st.text_input("🔏 هێمای ئاو (Watermark):", placeholder="ناو یان لۆگۆی خۆت لێرە بنووسە...")
 
     with col_content:
-        st.info("💡 **تایبەتمەندییەکان:** `#` بۆ سەردێڕ | `**وشە**` بۆ تۆخکردن | `==وشە==` بۆ هایلایت | `|وشە|وشە|` بۆ خشتە. ئەگەر دیالۆگ بنووسیت وەکو (ناوی کەس: قسەکە)، ئەوا خۆی دەیکاتە بڵقی چات!")
-        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە بەشی AI بیهێنە):", value=st.session_state.doc_content, height=450, placeholder="دەقەکانت لێرە بنووسە یان کۆپی بکە...")
+        with st.expander("💡 ڕێنمایی: چۆن دەقەکانم ڕێکبخەم؟", expanded=True):
+            st.markdown("""
+            <div dir="rtl" style="text-align: right;">
+            بۆ ئەوەی دیزاینێکی زۆر جوان بەدەست بهێنیت، ئەم نیشانانە لەناو دەقەکەتدا بەکاربهێنە:
+            <br><br>
+            <b>١. سەردێڕەکان:</b> نیشانەی <code>#</code> بخەرە پێش دێڕەکە.<br>
+            <i>نموونە:</i> <code># ئەمە سەردێڕێکی گەورەیە</code><br><br>
+            <b>٢. تۆخکردن:</b> وشەکە بخەرە نێوان دوو ئەستێرە.<br>
+            <i>نموونە:</i> <code>**ئەم وشەیە تۆخە**</code><br><br>
+            <b>٣. هایلایت (ڕەنگکردن):</b> وشەکە بخەرە نێوان دوو یەکسان.<br>
+            <i>نموونە:</i> <code>==ئەمە زۆر گرنگە==</code><br><br>
+            <b>٤. بڵقی چات (دیالۆگ):</b> ناوی کەسەکە بنووسە و دوو خاڵ دابنێ.<br>
+            <i>نموونە:</i> <code>مامۆستا: سڵاو قوتابیان</code><br><br>
+            <b>٥. خشتە:</b> نیشانەی <code>|</code> لە نێوان وشەکان دابنێ.<br>
+            <i>نموونە:</i> <code>| وشە | مانا | پێچەوانە |</code>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە مۆدی AI بیهێنە):", value=st.session_state.doc_content, height=400, placeholder="دەقەکانت لێرە بنووسە...\n\nبۆ نموونە:\n# پێشەکی\nئەمە دەقێکی ئاساییە بۆ تاقیکردنەوە...\n\n| ناو | تەمەن |\n| عەلی | ٢٢ |")
         
         if st.button("🚀 بەرهەمهێنانی PDF بە کوالێتی بەرز", type="primary", use_container_width=True):
             if not raw_text.strip():
-                st.error("⚠️ تکایە دەقێک بنووسە.")
+                st.error("⚠️ تکایە دەقێک بنووسە پێش ئەوەی دروستی بکەیت.")
             else:
                 with st.spinner("⏳ مۆتۆڕەکە خەریکی داڕشتنی دیزاینەکانە..."):
                     lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
-                    is_rtl = "ڕاست" in language_dir
-                    dir_attr = "rtl" if is_rtl else "ltr"
-                    align_attr = "right" if is_rtl else "left"
-                    alt_align = "left" if is_rtl else "right"
+                    
+                    if "میکس" in language_dir:
+                        dir_attr = "auto"
+                        align_attr = "start"
+                        alt_align = "end"
+                    elif "ڕاست" in language_dir:
+                        dir_attr = "rtl"
+                        align_attr = "right"
+                        alt_align = "left"
+                    else:
+                        dir_attr = "ltr"
+                        align_attr = "left"
+                        alt_align = "right"
                     
                     themes = {
                         "زمان و دیالۆگ (شێوەی چات 💬)": {
@@ -103,11 +133,11 @@ with tab_pdf:
 
                         if line.startswith("#"):
                             if in_table:
-                                content_blocks += f'<table class="premium-table">{table_content}</table>'
+                                content_blocks += f'<table class="premium-table" dir="{dir_attr}">{table_content}</table>'
                                 in_table = False; table_content = ""
                             
                             header_text = line.replace("#", "").strip()
-                            content_blocks += f'<div class="premium-header"><h2 style="margin:0;">{header_text}</h2></div>'
+                            content_blocks += f'<div class="premium-header" dir="{dir_attr}"><h2 style="margin:0;">{header_text}</h2></div>'
 
                         elif "|" in line:
                             if not in_table: in_table = True
@@ -117,7 +147,7 @@ with tab_pdf:
 
                         elif (":" in line or "：" in line) and "زمان" in active_theme:
                             if in_table:
-                                content_blocks += f'<table class="premium-table">{table_content}</table>'
+                                content_blocks += f'<table class="premium-table" dir="{dir_attr}">{table_content}</table>'
                                 in_table = False; table_content = ""
                                 
                             parts = re.split(r'[:：]', line, maxsplit=1)
@@ -128,7 +158,7 @@ with tab_pdf:
                             bubble_class = "chat-bubble-alt" if is_alt else "chat-bubble"
                             
                             content_blocks += f'''
-                            <div class="chat-container">
+                            <div class="chat-container" dir="{dir_attr}">
                                 <div class="{bubble_class}">
                                     <div class="chat-name">{sp}</div>
                                     <div class="chat-msg">{msg}</div>
@@ -138,13 +168,13 @@ with tab_pdf:
                             
                         else:
                             if in_table:
-                                content_blocks += f'<table class="premium-table">{table_content}</table>'
+                                content_blocks += f'<table class="premium-table" dir="{dir_attr}">{table_content}</table>'
                                 in_table = False; table_content = ""
                                 
-                            content_blocks += f'<div class="normal-text">{line}</div>'
+                            content_blocks += f'<div class="normal-text" dir="{dir_attr}">{line}</div>'
                             
                     if in_table:
-                        content_blocks += f'<table class="premium-table">{table_content}</table>'
+                        content_blocks += f'<table class="premium-table" dir="{dir_attr}">{table_content}</table>'
 
                     css_string = f"""
                     @page {{
@@ -239,7 +269,6 @@ with tab_pdf:
                     }}
                     .normal-text {{
                         margin-bottom: 15px;
-                        text-align: justify;
                         padding: 10px;
                     }}
                     .premium-table {{
@@ -276,7 +305,7 @@ with tab_pdf:
                     doc_subtitle = subtitle if subtitle.strip() else ""
 
                     cover_html = f'''
-                    <div class="cover-page">
+                    <div class="cover-page" dir="{dir_attr}">
                         <div class="cover-box">
                             <div class="cover-title">{doc_title}</div>
                             <div class="cover-subtitle">{doc_subtitle}</div>
@@ -285,7 +314,7 @@ with tab_pdf:
                             </div>
                         </div>
                     </div>
-                    ''' if cover_page else f'<h1 style="color:{t["primary"]}; text-align:center; font-size:35pt; border-bottom:3px solid {t["border"]}; padding-bottom:15px;">{doc_title}</h1><h3 style="text-align:center; opacity:0.7;">{doc_subtitle}</h3>'
+                    ''' if cover_page else f'<h1 dir="{dir_attr}" style="color:{t["primary"]}; text-align:center; font-size:35pt; border-bottom:3px solid {t["border"]}; padding-bottom:15px;">{doc_title}</h1><h3 dir="{dir_attr}" style="text-align:center; opacity:0.7;">{doc_subtitle}</h3>'
 
                     watermark_html = f'<div class="watermark">{watermark}</div>' if watermark else ""
 
@@ -313,30 +342,27 @@ with tab_pdf:
 with tab_ai:
     st.markdown("### 🤖 دروستکردنی ناوەڕۆک بە ژیری دەستکرد")
     
-    with st.expander("ℹ️ بۆچی پێویستم بە کلیلی API هەیە و چۆن دەستی بخەم؟", expanded=True):
+    with st.expander("ℹ️ چۆنیەتی وەرگرتنی کلیلی تایبەت بە خۆت", expanded=True):
         st.markdown("""
-        **بۆچی پێویستە؟**  
-        ئەم پلاتفۆرمە بە شێوەیەکی ڕاستەوخۆ پشت بە مۆتۆڕی ژیری دەستکردی گووگڵ (Gemini) دەبەستێت بۆ دروستکردن و ڕێکخستنی بابەتەکان. بۆ ئەوەی خزمەتگوزارییەکە بە خۆڕایی و بێسنوور بێت بۆت، دەبێت هەر بەکارهێنەرێک کلیلی تایبەت بە خۆی هەبێت.
+        <div dir="rtl" style="text-align: right;">
+        ئەم مۆتۆڕە پێویستی بە کلیلێکی ژیری دەستکرد هەیە بۆ ئەوەی کارەکانت بۆ بکات. کلیلەکە <b>تایبەتە بە خۆت</b> و لە هیچ شوێنێک خەزن ناکرێت. بۆ وەرگرتنی:
+        <br><br>
+        ١. بڕۆ بۆ ماڵپەڕی <b>Google AI Studio</b>.<br>
+        ٢. بە ئیمەیڵەکەت (Gmail) بچۆ ژوورەوە.<br>
+        ٣. کلیک لە دوگمەی شین بکە کە نووسراوە <b>Create API key</b>.<br>
+        ٤. کلیلەکە کۆپی بکە و لێرە لە خوارەوە دایبنێ.
+        </div>
+        """, unsafe_allow_html=True)
         
-        **پارێزراوی کلیلەکە:**  
-        ئەم کلیلە **تایبەتە بە خۆت (Individualized)** و بە تەواوی پارێزراوە، لە هیچ سێرڤەرێک پاشەکەوت ناکرێت و تەنها لە کاتی کارکردنی خۆتدا لەسەر شاشەکەت چالاکە.
-        
-        **چۆنیەتی وەرگرتنی کلیل:**
-        1. بڕۆ بۆ ماڵپەڕی فەرمی [Google AI Studio](https://aistudio.google.com/app/apikey).
-        2. بە ئیمەیڵەکەت (Gmail) بچۆ ژوورەوە.
-        3. کلیک لە دوگمەی **Create API key** بکە و کلیلەکە کۆپی بکە.
-        4. کلیلەکە بهێنە و لەم خانەیەی خوارەوە دایبنێ.
-        """)
-        
-    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="کلیلەکەت لێرە دابنێ...")
+    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini):", type="password", placeholder="کلیلەکەت لێرە دابنێ (بە AIza دەست پێدەکات)...")
     
-    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="لێرە بە کوردی بە سیستەمەکە بڵێ چیت دەوێت بۆت ئامادە بکات...", height=150)
+    ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="بۆ نموونە: کورتەیەکم بۆ بنووسە لەسەر سوودەکانی وەرزشکردن، با خشتە و سەردێڕی تێدا بێت...", height=150)
     
     if st.button("✨ داواکردن لە AI و هێنانە ناوەوە", type="primary", use_container_width=True):
         if not user_api_key:
             st.error("⚠️ تکایە سەرەتا کلیلی تایبەتی خۆت دابنێ لە خانەی سەرەوە.")
         elif not ai_input_text.strip():
-            st.error("⚠️ تکایە داواکارییەک بنووسە.")
+            st.error("⚠️ تکایە داواکارییەک بنووسە بۆ ئەوەی AI بۆت ئامادە بکات.")
         else:
             with st.spinner("🤖 خەریکی بیرکردنەوە و نووسینە..."):
                 try:
@@ -348,4 +374,4 @@ with tab_ai:
                 except Exception as e:
                     st.error(f"❌ کێشەیەک ڕوویدا لە بەستنەوە بە AI. دڵنیابە کلیلەکەت ڕاستە. (وردەکاری: {e})")
 
-st.markdown("<br><hr><p style='text-align: center; color: #94a3b8; font-weight: bold;'>دروستکراوە بە تەکنەلۆژیای پێشکەوتوو © 2026</p>", unsafe_allow_html=True)
+st.markdown("<br><hr><p style='text-align: center; color: #94a3b8; font-weight: bold;'>بە هیوای سوود © 2026</p>", unsafe_allow_html=True)
