@@ -2,7 +2,7 @@ import streamlit as st
 import re
 import datetime
 import io
-from weasyprint import HTML, CSS
+from weasyprint import HTML
 import google.generativeai as genai
 
 # ڕێکخستنی سەرەکی وێبسایت
@@ -49,34 +49,34 @@ with tab_pdf:
         ])
         
         language_dir = st.selectbox("🌐 ئاڕاستەی دەق:", [
-            "ڕاست بۆ چەپ (کوردی، عەرەبی، فارسی...)", 
-            "چەپ بۆ ڕاست (English, Türkçe...)",
-            "تێکەڵ (میکس - Auto)"
+            "ڕاست بۆ چەپ (کوردی، عەرەبی، فارسی)", 
+            "چەپ بۆ ڕاست (English, Türkçe)",
+            "تێکەڵ (Mix - Auto)"
         ])
         
         cover_page = st.checkbox("📄 دروستکردنی پەڕەی بەرگ (Cover)", value=True)
         watermark = st.text_input("🔏 هێمای ئاو (Watermark):", placeholder="ناو یان لۆگۆی خۆت لێرە بنووسە...")
 
     with col_content:
-        with st.expander("💡 ڕێنمایی: چۆن دەقەکانم ڕێکبخەم؟", expanded=True):
+        with st.expander("💡 ڕێنمایی: چۆن دەقەکانم ڕێکبخەم؟ (نموونەکان لێرە ببینە)", expanded=True):
             st.markdown("""
             <div dir="rtl" style="text-align: right;">
-            بۆ ئەوەی دیزاینێکی زۆر جوان بەدەست بهێنیت، ئەم نیشانانە لەناو دەقەکەتدا بەکاربهێنە:
+            بۆ ئەوەی دیزاینێکی زۆر جوان بەدەست بهێنیت، ئەم نیشانانە <b>لەناو خانەی نووسینەکەی خوارەوە</b> بەکاربهێنە:
             <br><br>
             <b>١. سەردێڕەکان:</b> نیشانەی <code>#</code> بخەرە پێش دێڕەکە.<br>
-            <i>نموونە:</i> <code># ئەمە سەردێڕێکی گەورەیە</code><br><br>
+            <i>دەقەکە بەم شێوەیە بنووسە:</i> <code># ئەمە سەردێڕێکی گەورەیە</code><br><br>
             <b>٢. تۆخکردن:</b> وشەکە بخەرە نێوان دوو ئەستێرە.<br>
-            <i>نموونە:</i> <code>**ئەم وشەیە تۆخە**</code><br><br>
+            <i>دەقەکە بەم شێوەیە بنووسە:</i> <code>**ئەم وشەیە تۆخە**</code><br><br>
             <b>٣. هایلایت (ڕەنگکردن):</b> وشەکە بخەرە نێوان دوو یەکسان.<br>
-            <i>نموونە:</i> <code>==ئەمە زۆر گرنگە==</code><br><br>
+            <i>دەقەکە بەم شێوەیە بنووسە:</i> <code>==ئەمە زۆر گرنگە==</code><br><br>
             <b>٤. بڵقی چات (دیالۆگ):</b> ناوی کەسەکە بنووسە و دوو خاڵ دابنێ.<br>
-            <i>نموونە:</i> <code>مامۆستا: سڵاو قوتابیان</code><br><br>
+            <i>دەقەکە بەم شێوەیە بنووسە:</i> <code>سیاوش: سلام داداش</code><br><br>
             <b>٥. خشتە:</b> نیشانەی <code>|</code> لە نێوان وشەکان دابنێ.<br>
-            <i>نموونە:</i> <code>| وشە | مانا | پێچەوانە |</code>
+            <i>دەقەکە بەم شێوەیە بنووسە:</i> <code>| وشە | مانا | پێچەوانە |</code>
             </div>
             """, unsafe_allow_html=True)
             
-        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە مۆدی AI بیهێنە):", value=st.session_state.doc_content, height=400, placeholder="دەقەکانت لێرە بنووسە...\n\nبۆ نموونە:\n# پێشەکی\nئەمە دەقێکی ئاساییە بۆ تاقیکردنەوە...\n\n| ناو | تەمەن |\n| عەلی | ٢٢ |")
+        raw_text = st.text_area("دەقەکەت لێرە دابنێ (یان لە مۆدی AI بیهێنە):", value=st.session_state.doc_content, height=450, placeholder="دەقەکانت لێرە بنووسە یان پەیستی بکە...\n\nبۆ نموونە:\n# پێشەکی\nئەمە دەقێکی ئاساییە بۆ تاقیکردنەوە...\n\n| ناو | تەمەن |\n| عەلی | ٢٢ |")
         
         if st.button("🚀 بەرهەمهێنانی PDF بە کوالێتی بەرز", type="primary", use_container_width=True):
             if not raw_text.strip():
@@ -85,7 +85,7 @@ with tab_pdf:
                 with st.spinner("⏳ مۆتۆڕەکە خەریکی داڕشتنی دیزاینەکانە..."):
                     lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
                     
-                    if "میکس" in language_dir:
+                    if "Mix" in language_dir:
                         dir_attr = "auto"
                         align_attr = "start"
                         alt_align = "end"
@@ -155,10 +155,13 @@ with tab_pdf:
                             if sp not in speakers: speakers.append(sp)
                             
                             is_alt = (speakers.index(sp) % 2 == 1)
+                            
+                            # ئەم بەشە نوێیە کێشەی بڕانی پەڕەکانی چارەسەر کرد
+                            wrapper_class = "chat-wrapper-alt" if is_alt else "chat-wrapper-normal"
                             bubble_class = "chat-bubble-alt" if is_alt else "chat-bubble"
                             
                             content_blocks += f'''
-                            <div class="chat-container" dir="{dir_attr}">
+                            <div class="{wrapper_class}" dir="{dir_attr}">
                                 <div class="{bubble_class}">
                                     <div class="chat-name">{sp}</div>
                                     <div class="chat-msg">{msg}</div>
@@ -232,27 +235,34 @@ with tab_pdf:
                         color: {t["primary"]};
                         page-break-after: avoid;
                     }}
-                    .chat-container {{
-                        width: 100%;
-                        clear: both;
+                    .chat-wrapper-normal {{
+                        text-align: {align_attr};
                         margin-bottom: 20px;
-                        overflow: hidden;
                         page-break-inside: avoid;
+                        width: 100%;
+                    }}
+                    .chat-wrapper-alt {{
+                        text-align: {alt_align};
+                        margin-bottom: 20px;
+                        page-break-inside: avoid;
+                        width: 100%;
                     }}
                     .chat-bubble {{
-                        float: {align_attr};
+                        display: inline-block;
+                        text-align: {align_attr};
                         background-color: {t["chat1"]};
                         padding: 15px 25px;
-                        border-radius: 25px 25px 25px 5px;
+                        border-radius: 20px;
                         border: 2px solid {t["border"]}50;
                         max-width: 80%;
                         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
                     }}
                     .chat-bubble-alt {{
-                        float: {alt_align};
+                        display: inline-block;
+                        text-align: {align_attr};
                         background-color: {t["chat2"]};
                         padding: 15px 25px;
-                        border-radius: 25px 25px 5px 25px;
+                        border-radius: 20px;
                         border: 2px solid {t["border"]}50;
                         max-width: 80%;
                         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -344,17 +354,17 @@ with tab_ai:
     
     with st.expander("ℹ️ چۆنیەتی وەرگرتنی کلیلی تایبەت بە خۆت", expanded=True):
         st.markdown("""
-        <div dir="rtl" style="text-align: right;">
-        ئەم مۆتۆڕە پێویستی بە کلیلێکی ژیری دەستکرد هەیە بۆ ئەوەی کارەکانت بۆ بکات. کلیلەکە <b>تایبەتە بە خۆت</b> و لە هیچ شوێنێک خەزن ناکرێت. بۆ وەرگرتنی:
+        <div dir="rtl" style="text-align: right; line-height: 1.8;">
+        ئەم مۆتۆڕە پێویستی بە کلیلێکی ژیری دەستکرد هەیە بۆ ئەوەی کارەکانت بۆ بکات. ئەم کلیلە بە تەواوی تایبەتە بە خۆت و لە هیچ سێرڤەرێک پاشەکەوت ناکرێت. بۆ وەرگرتنی:
         <br><br>
-        ١. بڕۆ بۆ ماڵپەڕی <b>Google AI Studio</b>.<br>
+        ١. بڕۆ بۆ ماڵپەڕی فەرمی (Google AI Studio).<br>
         ٢. بە ئیمەیڵەکەت (Gmail) بچۆ ژوورەوە.<br>
-        ٣. کلیک لە دوگمەی شین بکە کە نووسراوە <b>Create API key</b>.<br>
+        ٣. کلیک لە دوگمەی دروستکردنی کلیل (Create API key) بکە.<br>
         ٤. کلیلەکە کۆپی بکە و لێرە لە خوارەوە دایبنێ.
         </div>
         """, unsafe_allow_html=True)
         
-    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini):", type="password", placeholder="کلیلەکەت لێرە دابنێ (بە AIza دەست پێدەکات)...")
+    user_api_key = st.text_input("🔑 کلیلی تایبەتت (Gemini API Key):", type="password", placeholder="کلیلەکەت لێرە دابنێ...")
     
     ai_input_text = st.text_area("✍️ داواکارییەکەت بنووسە:", placeholder="بۆ نموونە: کورتەیەکم بۆ بنووسە لەسەر سوودەکانی وەرزشکردن، با خشتە و سەردێڕی تێدا بێت...", height=150)
     
